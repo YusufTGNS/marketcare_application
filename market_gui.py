@@ -1,12 +1,3 @@
-"""
-============================================================
-  AKILLI ECZANE STOK YÖNETİM SİSTEMİ — PyQt5 Arayüzü
-============================================================
-Kurulum  : pip install PyQt5
-Çalıştır : py -3.13 eczane_gui.py
-Not      : eczane_sistemi.py ile aynı klasörde olmalıdır.
-"""
-
 import sys
 from datetime import date, datetime
 
