@@ -1,5 +1,5 @@
--- MarketCare Yönetim Paneli SQLite Şeması
--- Not: Migration sistemi basit tutulmuştur; init_db.py şemayı her kurulumda uygular.
+-- MarketCare icin temel SQLite semasi.
+-- init_db.py eksik kolonlari calisma aninda tamamlar.
 
 PRAGMA foreign_keys = ON;
 
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS sale_items (
   FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
--- En sık sorgular için indexler
+-- Sik kullanilan sorgular icin indeksler
 CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode_value);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_product ON stock_movements(product_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_sales_created_by ON sales(created_by_user_id, created_at);

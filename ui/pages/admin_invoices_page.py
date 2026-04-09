@@ -1,64 +1,63 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 import os
 
 from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLabel,
-    QHBoxLayout,
+    QAbstractItemView,
+    QDateEdit,
     QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
-    QMessageBox,
-    QAbstractItemView,
-    QDateEdit,
-    QHeaderView,
+    QVBoxLayout,
+    QWidget,
 )
 
-from ui.style import C, card_ss, btn_primary_ss, input_ss, TABLE_SS, shadow
 from repositories.sales_repo import list_sales, list_sales_for_user
+from ui.style import C, TABLE_SS, btn_primary_ss, card_ss, input_ss, shadow
 from utilities.datetime_utils import format_db_datetime_local
 
 
-def _doc_status(path: str) -> str:
-    return "Hazır" if path else "Yok"
+def _belge_durumu(path: str) -> str:
+    return "Hazir" if path else "Yok"
 
 
 class AdminInvoicesPage(QWidget):
     def __init__(self, user: Dict[str, Any], parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.user = user
+        self.is_admin = str(self.user.get("role", "")).lower() == "admin"
+        self._selected_sale: Optional[Dict[str, Any]] = None
         self.setStyleSheet(f"background:{C['bg']};")
 
-        self._selected_sale: Optional[Dict[str, Any]] = None
-        self.is_admin = str(self.user.get("role", "")).lower() == "admin"
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(28, 22, 28, 22)
+        layout.setSpacing(16)
 
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(28, 22, 28, 22)
-        lay.setSpacing(16)
-
-        title = QLabel("Faturalar")
+        title = QLabel("Belgeler")
         title.setStyleSheet(f"color:{C['text']};font-size:21px;font-weight:900;")
-        lay.addWidget(title)
+        layout.addWidget(title)
 
         filter_card = QFrame()
         filter_card.setStyleSheet(card_ss())
         shadow(filter_card)
-        filter_lay = QVBoxLayout(filter_card)
-        filter_lay.setContentsMargins(16, 16, 16, 16)
-        filter_lay.setSpacing(12)
-        lay.addWidget(filter_card)
+        filter_layout = QVBoxLayout(filter_card)
+        filter_layout.setContentsMargins(16, 16, 16, 16)
+        filter_layout.setSpacing(12)
+        layout.addWidget(filter_card)
 
-        filter_title = QLabel("Son 7 Gün Satış Akışı")
+        filter_title = QLabel("Satis Belgeleri")
         filter_title.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
-        filter_lay.addWidget(filter_title)
+        filter_layout.addWidget(filter_title)
 
         row = QHBoxLayout()
         row.setSpacing(10)
-        filter_lay.addLayout(row)
+        filter_layout.addLayout(row)
 
         self.date_from = QDateEdit()
         self.date_from.setCalendarPopup(True)
@@ -68,39 +67,39 @@ class AdminInvoicesPage(QWidget):
         self.date_to.setCalendarPopup(True)
         self.date_to.setStyleSheet(input_ss())
 
-        self.btn_last_week = QPushButton("Son 7 Gün")
-        self.btn_last_week.setStyleSheet(btn_primary_ss())
-        self.btn_last_week.clicked.connect(self._set_last_seven_days)
+        btn_last_week = QPushButton("Son 7 Gun")
+        btn_last_week.setStyleSheet(btn_primary_ss())
+        btn_last_week.clicked.connect(self._set_last_seven_days)
 
-        self.btn_today = QPushButton("Bugün")
-        self.btn_today.setStyleSheet(btn_primary_ss())
-        self.btn_today.clicked.connect(self._set_today)
+        btn_today = QPushButton("Bugun")
+        btn_today.setStyleSheet(btn_primary_ss())
+        btn_today.clicked.connect(self._set_today)
 
-        self.btn_refresh = QPushButton("Yenile")
-        self.btn_refresh.setStyleSheet(btn_primary_ss())
-        self.btn_refresh.clicked.connect(self.refresh)
+        btn_refresh = QPushButton("Yenile")
+        btn_refresh.setStyleSheet(btn_primary_ss())
+        btn_refresh.clicked.connect(self.refresh)
 
-        row.addWidget(QLabel("Başlangıç"))
+        row.addWidget(QLabel("Baslangic"))
         row.addWidget(self.date_from)
-        row.addWidget(QLabel("Bitiş"))
+        row.addWidget(QLabel("Bitis"))
         row.addWidget(self.date_to)
-        row.addWidget(self.btn_last_week)
-        row.addWidget(self.btn_today)
-        row.addWidget(self.btn_refresh)
+        row.addWidget(btn_last_week)
+        row.addWidget(btn_today)
+        row.addWidget(btn_refresh)
         row.addStretch()
 
         self.lbl_range = QLabel()
         self.lbl_range.setStyleSheet(f"color:{C['text_dim']};font-size:12px;font-weight:700;")
-        filter_lay.addWidget(self.lbl_range)
+        filter_layout.addWidget(self.lbl_range)
 
         self.lbl_total_sales = QLabel()
         self.lbl_total_sales.setStyleSheet(f"color:{C['accent']};font-size:13px;font-weight:900;")
-        filter_lay.addWidget(self.lbl_total_sales)
+        filter_layout.addWidget(self.lbl_total_sales)
 
         self.table = QTableWidget()
         self.table.setColumnCount(8)
         self.table.setHorizontalHeaderLabels(
-            ["Satış No", "Tarih", "Personel", "Ödeme", "Toplam", "Slip", "Fatura", "sale_id"]
+            ["Satis No", "Tarih", "Personel", "Odeme", "Toplam", "Slip", "Fatura", "sale_id"]
         )
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -115,68 +114,66 @@ class AdminInvoicesPage(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
-        lay.addWidget(self.table, stretch=1)
-
         self.table.itemSelectionChanged.connect(self._on_row_selected)
+        layout.addWidget(self.table, stretch=1)
 
-        action_card = QFrame()
-        action_card.setStyleSheet(card_ss())
-        shadow(action_card)
-        act_lay = QVBoxLayout(action_card)
-        act_lay.setContentsMargins(16, 16, 16, 16)
-        act_lay.setSpacing(10)
-        lay.addWidget(action_card)
+        detail_card = QFrame()
+        detail_card.setStyleSheet(card_ss())
+        shadow(detail_card)
+        detail_layout = QVBoxLayout(detail_card)
+        detail_layout.setContentsMargins(16, 16, 16, 16)
+        detail_layout.setSpacing(10)
+        layout.addWidget(detail_card)
 
-        self.lbl_selected = QLabel("Seçili satış: —")
+        self.lbl_selected = QLabel("Secili satis: -")
         self.lbl_selected.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
-        act_lay.addWidget(self.lbl_selected)
+        detail_layout.addWidget(self.lbl_selected)
 
-        self.lbl_summary = QLabel("Satış seçildiğinde belge durumu burada görünecek.")
+        self.lbl_summary = QLabel("Bir satis secildiginde belge ozeti burada gorunecek.")
         self.lbl_summary.setStyleSheet(f"color:{C['text']};font-size:12px;font-weight:700;")
         self.lbl_summary.setWordWrap(True)
-        act_lay.addWidget(self.lbl_summary)
+        detail_layout.addWidget(self.lbl_summary)
 
-        btn_row = QHBoxLayout()
-        btn_row.addStretch()
+        button_row = QHBoxLayout()
+        button_row.addStretch()
 
-        self.btn_open_slip = QPushButton("Slip Görüntüle")
-        self.btn_open_slip.setStyleSheet(btn_primary_ss())
-        self.btn_open_slip.clicked.connect(self._open_slip)
-        btn_row.addWidget(self.btn_open_slip)
+        btn_open_slip = QPushButton("Slip Ac")
+        btn_open_slip.setStyleSheet(btn_primary_ss())
+        btn_open_slip.clicked.connect(self._open_slip)
+        button_row.addWidget(btn_open_slip)
 
-        self.btn_open_invoice = QPushButton("Fatura Görüntüle")
-        self.btn_open_invoice.setStyleSheet(btn_primary_ss())
-        self.btn_open_invoice.clicked.connect(self._open_invoice)
-        btn_row.addWidget(self.btn_open_invoice)
-
-        act_lay.addLayout(btn_row)
+        btn_open_invoice = QPushButton("Fatura Ac")
+        btn_open_invoice.setStyleSheet(btn_primary_ss())
+        btn_open_invoice.clicked.connect(self._open_invoice)
+        button_row.addWidget(btn_open_invoice)
+        detail_layout.addLayout(button_row)
 
         self._set_last_seven_days()
 
-    def _bildirim(self, msg: str, ok: bool = True):
-        dlg = QMessageBox(self)
-        dlg.setWindowTitle("MarketCare")
-        dlg.setText(msg)
-        dlg.setIcon(QMessageBox.Information if ok else QMessageBox.Warning)
-        dlg.setStyleSheet(f"QMessageBox{{background:{C['card']};}}")
-        dlg.exec_()
+    def _bildirim(self, message: str, ok: bool = True) -> None:
+        pencere = QMessageBox(self)
+        pencere.setWindowTitle("MarketCare")
+        pencere.setText(message)
+        pencere.setIcon(QMessageBox.Information if ok else QMessageBox.Warning)
+        pencere.setStyleSheet(f"QMessageBox{{background:{C['card']};}}")
+        pencere.exec_()
 
-    def _set_last_seven_days(self):
+    def _set_last_seven_days(self) -> None:
         today = QDate.currentDate()
         self.date_to.setDate(today)
         self.date_from.setDate(today.addDays(-6))
         self.refresh()
 
-    def _set_today(self):
+    def _set_today(self) -> None:
         today = QDate.currentDate()
         self.date_from.setDate(today)
         self.date_to.setDate(today)
         self.refresh()
 
-    def refresh(self):
+    def refresh(self) -> None:
         start_date = self.date_from.date().toString("yyyy-MM-dd")
         end_date = self.date_to.date().toString("yyyy-MM-dd")
-        self.lbl_range.setText(f"Gösterilen aralık: {start_date} - {end_date}")
+        self.lbl_range.setText(f"Gosterilen aralik: {start_date} - {end_date}")
 
         if self.is_admin:
             rows = list_sales(limit=500, start_date=start_date, end_date=end_date)
@@ -188,33 +185,31 @@ class AdminInvoicesPage(QWidget):
                 end_date=end_date,
             )
 
-        total_sales_amount = sum(float(r.get("grand_total") or 0) for r in rows)
-        self.lbl_total_sales.setText(
-            f"Toplam Satış: ₺{total_sales_amount:.2f}  |  Kayıt Sayısı: {len(rows)}"
-        )
+        toplam = sum(float(row.get("grand_total") or 0) for row in rows)
+        self.lbl_total_sales.setText(f"Toplam satis: TL{toplam:.2f} | Kayit sayisi: {len(rows)}")
 
         self.table.setRowCount(0)
-        for rdata in rows:
-            r = self.table.rowCount()
-            self.table.insertRow(r)
+        for row_data in rows:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
 
-            sale_item = QTableWidgetItem(str(rdata.get("sale_no") or ""))
-            sale_item.setData(Qt.UserRole, dict(rdata))
-            self.table.setItem(r, 0, sale_item)
-            self.table.setItem(r, 1, QTableWidgetItem(format_db_datetime_local(str(rdata.get("created_at") or ""))))
-            self.table.setItem(r, 2, QTableWidgetItem(str(rdata.get("created_by") or self.user.get("username") or "")))
-            self.table.setItem(r, 3, QTableWidgetItem(str(rdata.get("payment_type") or "")))
-            self.table.setItem(r, 4, QTableWidgetItem(f"₺{float(rdata.get('grand_total') or 0):.2f}"))
-            self.table.setItem(r, 5, QTableWidgetItem(_doc_status(str(rdata.get("pdf_slip_path") or ""))))
-            self.table.setItem(r, 6, QTableWidgetItem(_doc_status(str(rdata.get("pdf_invoice_path") or ""))))
-            self.table.setItem(r, 7, QTableWidgetItem(str(int(rdata.get("id") or 0))))
-            self.table.setRowHeight(r, 44)
+            sale_item = QTableWidgetItem(str(row_data.get("sale_no") or ""))
+            sale_item.setData(Qt.UserRole, dict(row_data))
+            self.table.setItem(row, 0, sale_item)
+            self.table.setItem(row, 1, QTableWidgetItem(format_db_datetime_local(str(row_data.get("created_at") or ""))))
+            self.table.setItem(row, 2, QTableWidgetItem(str(row_data.get("created_by") or self.user.get("username") or "")))
+            self.table.setItem(row, 3, QTableWidgetItem(str(row_data.get("payment_type") or "")))
+            self.table.setItem(row, 4, QTableWidgetItem(f"TL{float(row_data.get('grand_total') or 0):.2f}"))
+            self.table.setItem(row, 5, QTableWidgetItem(_belge_durumu(str(row_data.get("pdf_slip_path") or ""))))
+            self.table.setItem(row, 6, QTableWidgetItem(_belge_durumu(str(row_data.get("pdf_invoice_path") or ""))))
+            self.table.setItem(row, 7, QTableWidgetItem(str(int(row_data.get("id") or 0))))
+            self.table.setRowHeight(row, 44)
 
         self._selected_sale = None
-        self.lbl_selected.setText("Seçili satış: —")
-        self.lbl_summary.setText("Satış seçildiğinde belge durumu burada görünecek.")
+        self.lbl_selected.setText("Secili satis: -")
+        self.lbl_summary.setText("Bir satis secildiginde belge ozeti burada gorunecek.")
 
-    def _on_row_selected(self):
+    def _on_row_selected(self) -> None:
         selected = self.table.selectedItems()
         if not selected:
             return
@@ -229,37 +224,39 @@ class AdminInvoicesPage(QWidget):
         slip_path = str(sale_data.get("pdf_slip_path") or "")
         invoice_path = str(sale_data.get("pdf_invoice_path") or "")
         created_at = format_db_datetime_local(str(sale_data.get("created_at") or ""))
-        total = f"₺{float(sale_data.get('grand_total') or 0):.2f}"
         payment = str(sale_data.get("payment_type") or "")
+        total = f"TL{float(sale_data.get('grand_total') or 0):.2f}"
 
         self._selected_sale = {
             "sale_no": sale_no,
             "slip_path": slip_path,
             "invoice_path": invoice_path,
         }
-        self.lbl_selected.setText(f"Seçili satış: {sale_no}")
+        self.lbl_selected.setText(f"Secili satis: {sale_no}")
         self.lbl_summary.setText(
-            f"Tarih: {created_at}\nÖdeme: {payment}\nToplam: {total}\nSlip durumu: {_doc_status(slip_path)}\nFatura durumu: {_doc_status(invoice_path)}"
+            f"Tarih: {created_at}\n"
+            f"Odeme: {payment}\n"
+            f"Toplam: {total}\n"
+            f"Slip durumu: {_belge_durumu(slip_path)}\n"
+            f"Fatura durumu: {_belge_durumu(invoice_path)}"
         )
 
-    def _open_slip(self):
-        if not self._selected_sale:
-            return
-        self._open_pdf(self._selected_sale.get("slip_path"), "Slip")
+    def _open_slip(self) -> None:
+        if self._selected_sale:
+            self._open_pdf(self._selected_sale.get("slip_path"), "Slip")
 
-    def _open_invoice(self):
-        if not self._selected_sale:
-            return
-        self._open_pdf(self._selected_sale.get("invoice_path"), "Fatura")
+    def _open_invoice(self) -> None:
+        if self._selected_sale:
+            self._open_pdf(self._selected_sale.get("invoice_path"), "Fatura")
 
-    def _open_pdf(self, path: Optional[str], label: str):
+    def _open_pdf(self, path: Optional[str], label: str) -> None:
         if not path:
-            self._bildirim(f"{label} belgesi hazır değil.", ok=False)
+            self._bildirim(f"{label} belgesi hazir degil.", ok=False)
             return
         if not os.path.exists(path):
-            self._bildirim(f"{label} dosyası bulunamadı.", ok=False)
+            self._bildirim(f"{label} dosyasi bulunamadi.", ok=False)
             return
         try:
             os.startfile(path)  # type: ignore[attr-defined]
         except Exception:
-            self._bildirim(f"{label} açma başarısız.", ok=False)
+            self._bildirim(f"{label} acilamadi.", ok=False)

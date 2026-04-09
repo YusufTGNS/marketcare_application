@@ -1,41 +1,4 @@
-from typing import Optional
-
 from db.connection import get_connection
-
-
-def record_stock_movement(
-    *,
-    product_id: int,
-    delta_qty: int,
-    movement_type: str,
-    qty_before: int,
-    qty_after: int,
-    user_id: int,
-    note: Optional[str] = None,
-) -> int:
-    """
-    Tek başına stok miktarını değiştirmez; yalnızca hareket kaydını yazar.
-    Stok miktarı genelde service katmanında transaction içinde güncellenir.
-    """
-    with get_connection() as conn:
-        cur = conn.execute(
-            """
-            INSERT INTO stock_movements(
-                product_id, delta_qty, movement_type, qty_before, qty_after, note, user_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                int(product_id),
-                int(delta_qty),
-                movement_type,
-                int(qty_before),
-                int(qty_after),
-                note,
-                int(user_id),
-            ),
-        )
-        conn.commit()
-        return int(cur.lastrowid)
 
 
 def list_stock_movements(limit: int = 200):
@@ -53,5 +16,4 @@ def list_stock_movements(limit: int = 200):
             """,
             (int(limit),),
         ).fetchall()
-        return [dict(r) for r in rows]
-
+        return [dict(row) for row in rows]

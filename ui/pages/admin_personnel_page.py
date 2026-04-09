@@ -1,23 +1,23 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QAbstractItemView,
+    QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
-    QFrame,
-    QComboBox,
     QTableWidget,
     QTableWidgetItem,
-    QAbstractItemView,
-    QMessageBox,
+    QVBoxLayout,
+    QWidget,
 )
 
-from ui.style import C, card_ss, input_ss, btn_success_ss, btn_danger_ss, TABLE_SS, shadow
 from repositories.users_repo import list_users
 from services.auth_service import create_user, reset_database
+from ui.style import C, TABLE_SS, btn_danger_ss, btn_success_ss, card_ss, input_ss, shadow
 from utilities.datetime_utils import format_db_datetime_local
 
 
@@ -27,48 +27,48 @@ class AdminPersonnelPage(QWidget):
         self.user = user
         self.setStyleSheet(f"background:{C['bg']};")
 
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(28, 22, 28, 22)
-        lay.setSpacing(16)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(28, 22, 28, 22)
+        layout.setSpacing(16)
 
-        title = QLabel("Personel Yönetimi")
+        title = QLabel("Personel Yonetimi")
         title.setStyleSheet(f"color:{C['text']};font-size:21px;font-weight:900;")
-        lay.addWidget(title)
+        layout.addWidget(title)
 
-        action_card = QFrame()
-        action_card.setStyleSheet(card_ss())
-        shadow(action_card)
-        action_lay = QVBoxLayout(action_card)
-        action_lay.setContentsMargins(18, 16, 18, 16)
-        action_lay.setSpacing(12)
-        lay.addWidget(action_card)
+        actions_card = QFrame()
+        actions_card.setStyleSheet(card_ss())
+        shadow(actions_card)
+        actions_layout = QVBoxLayout(actions_card)
+        actions_layout.setContentsMargins(18, 16, 18, 16)
+        actions_layout.setSpacing(12)
+        layout.addWidget(actions_card)
 
-        lbl_reset = QLabel("Veritabanı İşlemleri")
-        lbl_reset.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
-        action_lay.addWidget(lbl_reset)
+        reset_label = QLabel("Veritabani Islemleri")
+        reset_label.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
+        actions_layout.addWidget(reset_label)
 
-        btn_reset = QPushButton("DB Sıfırla")
+        btn_reset = QPushButton("Veritabanini Sifirla")
         btn_reset.setStyleSheet(btn_danger_ss())
         btn_reset.clicked.connect(self._reset_db)
-        action_lay.addWidget(btn_reset)
+        actions_layout.addWidget(btn_reset)
 
         create_card = QFrame()
         create_card.setStyleSheet(card_ss())
         shadow(create_card)
-        create_lay = QVBoxLayout(create_card)
-        create_lay.setContentsMargins(18, 16, 18, 16)
-        create_lay.setSpacing(12)
-        lay.addWidget(create_card)
+        create_layout = QVBoxLayout(create_card)
+        create_layout.setContentsMargins(18, 16, 18, 16)
+        create_layout.setSpacing(12)
+        layout.addWidget(create_card)
 
-        lbl_create = QLabel("Yeni Kullanıcı Oluştur")
-        lbl_create.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
-        create_lay.addWidget(lbl_create)
+        create_label = QLabel("Yeni Kullanici")
+        create_label.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
+        create_layout.addWidget(create_label)
 
         form = QHBoxLayout()
         form.setSpacing(8)
 
         self.inp_username = QLineEdit()
-        self.inp_username.setPlaceholderText("Kullanıcı adı")
+        self.inp_username.setPlaceholderText("Kullanici adi")
         self.inp_username.setStyleSheet(input_ss())
 
         self.inp_password = QLineEdit()
@@ -83,86 +83,91 @@ class AdminPersonnelPage(QWidget):
             "border-radius:8px;padding:7px 10px;font-size:13px;}}"
         )
 
-        self.btn_create_user = QPushButton("Kullanıcı Ekle")
-        self.btn_create_user.setStyleSheet(btn_success_ss())
-        self.btn_create_user.clicked.connect(self._create_user)
+        btn_create = QPushButton("Kullanici Ekle")
+        btn_create.setStyleSheet(btn_success_ss())
+        btn_create.clicked.connect(self._create_user)
 
         form.addWidget(self.inp_username, 2)
         form.addWidget(self.inp_password, 2)
         form.addWidget(self.cb_role, 1)
-        form.addWidget(self.btn_create_user, 1)
-        create_lay.addLayout(form)
+        form.addWidget(btn_create, 1)
+        create_layout.addLayout(form)
 
-        user_table_label = QLabel("Kullanıcılar")
-        user_table_label.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
-        lay.addWidget(user_table_label)
+        table_label = QLabel("Kullanicilar")
+        table_label.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
+        layout.addWidget(table_label)
 
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["ID", "Kullanıcı", "Rol", "Aktif", "Oluşturulma", "Son Giriş"])
+        self.table.setHorizontalHeaderLabels(["ID", "Kullanici", "Rol", "Aktif", "Olusturulma", "Son Giris"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
         self.table.setAlternatingRowColors(True)
         self.table.setStyleSheet(TABLE_SS)
         self.table.horizontalHeader().setStretchLastSection(True)
-        lay.addWidget(self.table, stretch=1)
+        layout.addWidget(self.table, stretch=1)
 
         self.refresh()
 
-    def _bildirim(self, mesaj: str, ok: bool = True):
-        dlg = QMessageBox(self)
-        dlg.setWindowTitle("MarketCare")
-        dlg.setText(mesaj)
-        dlg.setIcon(QMessageBox.Information if ok else QMessageBox.Warning)
-        dlg.setStyleSheet(f"QMessageBox{{background:{C['card']};}}")
-        dlg.exec_()
+    def _bildirim(self, message: str, ok: bool = True) -> None:
+        pencere = QMessageBox(self)
+        pencere.setWindowTitle("MarketCare")
+        pencere.setText(message)
+        pencere.setIcon(QMessageBox.Information if ok else QMessageBox.Warning)
+        pencere.setStyleSheet(f"QMessageBox{{background:{C['card']};}}")
+        pencere.exec_()
 
-    def refresh(self):
+    def refresh(self) -> None:
         self.table.setRowCount(0)
-        for u in list_users():
-            r = self.table.rowCount()
-            self.table.insertRow(r)
-            self.table.setItem(r, 0, QTableWidgetItem(str(u.get("id", ""))))
-            self.table.setItem(r, 1, QTableWidgetItem(str(u.get("username", ""))))
-            self.table.setItem(r, 2, QTableWidgetItem(str(u.get("role", ""))))
-            self.table.setItem(r, 3, QTableWidgetItem("Evet" if int(u.get("is_active", 0)) == 1 else "Hayır"))
-            self.table.setItem(r, 4, QTableWidgetItem(format_db_datetime_local(str(u.get("created_at") or ""))))
+        for user in list_users():
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            self.table.setItem(row, 0, QTableWidgetItem(str(user.get("id", ""))))
+            self.table.setItem(row, 1, QTableWidgetItem(str(user.get("username", ""))))
+            self.table.setItem(row, 2, QTableWidgetItem(str(user.get("role", ""))))
+            self.table.setItem(row, 3, QTableWidgetItem("Evet" if int(user.get("is_active", 0)) == 1 else "Hayir"))
+            self.table.setItem(row, 4, QTableWidgetItem(format_db_datetime_local(str(user.get("created_at") or ""))))
 
-            last_login = str(u.get("last_login_at") or "").strip()
-            self.table.setItem(r, 5, QTableWidgetItem(format_db_datetime_local(last_login) if last_login else "Henüz yok"))
+            last_login = str(user.get("last_login_at") or "").strip()
+            son_giris = format_db_datetime_local(last_login) if last_login else "Henuz yok"
+            self.table.setItem(row, 5, QTableWidgetItem(son_giris))
 
-    def _create_user(self):
+    def _create_user(self) -> None:
         username = self.inp_username.text().strip()
         password = self.inp_password.text().strip()
         role = self.cb_role.currentText()
 
         if not username or not password:
-            self._bildirim("Kullanıcı adı ve şifre girilmelidir.", ok=False)
+            self._bildirim("Kullanici adi ve sifre zorunludur.", ok=False)
             return
 
         try:
             create_user(username=username, password=password, role=role)
-            self._bildirim("Kullanıcı başarıyla oluşturuldu.")
-            self.inp_username.setText("")
-            self.inp_password.setText("")
-            self.refresh()
-        except Exception as e:
-            self._bildirim(str(e), ok=False)
+        except Exception as exc:
+            self._bildirim(str(exc), ok=False)
+            return
 
-    def _reset_db(self):
-        confirm = QMessageBox.question(
+        self._bildirim("Kullanici basariyla olusturuldu.")
+        self.inp_username.clear()
+        self.inp_password.clear()
+        self.refresh()
+
+    def _reset_db(self) -> None:
+        onay = QMessageBox.question(
             self,
-            "DB Sıfırla",
-            "Tüm veriler silinecek ve veritabanı yeniden oluşturulacak. Devam edilsin mi?",
+            "Veritabanini Sifirla",
+            "Tum veriler silinecek ve veritabani yeniden kurulacak. Devam etmek istiyor musunuz?",
             QMessageBox.Yes | QMessageBox.No,
         )
-        if confirm != QMessageBox.Yes:
+        if onay != QMessageBox.Yes:
             return
 
         try:
             reset_database()
-            self._bildirim("Veritabanı başarıyla sıfırlandı. Uygulamayı yeniden başlatın.")
-            self.refresh()
-        except Exception as e:
-            self._bildirim(str(e), ok=False)
+        except Exception as exc:
+            self._bildirim(str(exc), ok=False)
+            return
+
+        self._bildirim("Veritabani sifirlandi. Uygulamayi yeniden baslatmaniz onerilir.")
+        self.refresh()

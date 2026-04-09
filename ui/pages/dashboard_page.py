@@ -22,7 +22,15 @@ from ui.style import C, TABLE_SS, card_ss, shadow
 
 
 class StatCard(QFrame):
-    def __init__(self, title: str, value: str, subtitle: str, accent: str, badge: str, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        title: str,
+        value: str,
+        subtitle: str,
+        accent: str,
+        badge: str,
+        parent: Optional[QWidget] = None,
+    ):
         super().__init__(parent)
         self.setStyleSheet(
             f"""
@@ -91,24 +99,24 @@ class DashboardPage(QWidget):
         hero_layout.setSpacing(8)
         root.addWidget(hero)
 
-        brand_row = QHBoxLayout()
-        brand_row.setSpacing(8)
-        hero_layout.addLayout(brand_row)
+        badge_row = QHBoxLayout()
+        badge_row.setSpacing(8)
+        hero_layout.addLayout(badge_row)
 
         branch_badge = QLabel("SUBE 01")
         branch_badge.setStyleSheet(
             "background:rgba(255,255,255,0.14);color:#F4F0E7;border-radius:11px;padding:5px 10px;"
             "font-size:10px;font-weight:900;"
         )
-        brand_row.addWidget(branch_badge)
+        badge_row.addWidget(branch_badge)
 
-        quality_badge = QLabel("RAF HAZIR")
-        quality_badge.setStyleSheet(
+        status_badge = QLabel("RAF HAZIR")
+        status_badge.setStyleSheet(
             f"background:rgba(17,22,28,0.28);color:{C['accent']};border-radius:11px;padding:5px 10px;"
             "font-size:10px;font-weight:900;"
         )
-        brand_row.addWidget(quality_badge)
-        brand_row.addStretch()
+        badge_row.addWidget(status_badge)
+        badge_row.addStretch()
 
         self.lbl_welcome = QLabel()
         self.lbl_welcome.setStyleSheet("color:white;font-size:28px;font-weight:900;")
@@ -142,7 +150,7 @@ class DashboardPage(QWidget):
         recent_layout.setSpacing(10)
         section_row.addWidget(recent_card, 3)
 
-        recent_title = QLabel("Son Hareketler")
+        recent_title = QLabel("Son Satislar")
         recent_title.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
         recent_layout.addWidget(recent_title)
 
@@ -168,7 +176,7 @@ class DashboardPage(QWidget):
         side_layout.setSpacing(10)
         section_row.addWidget(side_card, 2)
 
-        side_title = QLabel("Hizli Bakis")
+        side_title = QLabel("Hizli Ozet")
         side_title.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
         side_layout.addWidget(side_title)
 
@@ -177,12 +185,12 @@ class DashboardPage(QWidget):
         self.lbl_quick_summary.setStyleSheet(f"color:{C['text']};font-size:13px;font-weight:700;")
         side_layout.addWidget(self.lbl_quick_summary)
 
-        service_badge = QLabel("GUNLUK OPERASYON")
-        service_badge.setStyleSheet(
+        operation_badge = QLabel("GUNLUK OPERASYON")
+        operation_badge.setStyleSheet(
             f"background:{C['row_sel']};color:{C['accent2']};border:1px solid {C['border']};"
             "border-radius:12px;padding:8px 10px;font-size:11px;font-weight:900;"
         )
-        side_layout.addWidget(service_badge)
+        side_layout.addWidget(operation_badge)
 
         critical_title = QLabel("Kritik Urunler")
         critical_title.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
@@ -203,14 +211,14 @@ class DashboardPage(QWidget):
 
         self.refresh()
 
-    def _clear_layout(self, layout: QHBoxLayout):
+    def _clear_layout(self, layout: QHBoxLayout) -> None:
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
 
-    def refresh(self):
+    def refresh(self) -> None:
         username = str(self.user.get("username") or "")
         role = "Yonetici" if is_admin(self.user) else "Personel"
         now = datetime.now()
@@ -219,6 +227,7 @@ class DashboardPage(QWidget):
         active_products = [product for product in products if int(product.get("is_active", 1)) == 1]
         critical_products = list_critical_products()
         total_stock = sum(int(product.get("stock_qty") or 0) for product in active_products)
+
         soon_expiring = 0
         for product in active_products:
             expiration_date = product.get("expiration_date")
@@ -226,10 +235,10 @@ class DashboardPage(QWidget):
                 continue
             try:
                 date_value = datetime.fromisoformat(str(expiration_date)).date()
-                if date_value <= now.date() + timedelta(days=7):
-                    soon_expiring += 1
-            except Exception:
-                pass
+            except ValueError:
+                continue
+            if date_value <= now.date() + timedelta(days=7):
+                soon_expiring += 1
 
         if is_admin(self.user):
             recent_sales = list_sales(limit=6)
@@ -240,21 +249,21 @@ class DashboardPage(QWidget):
 
         self.lbl_welcome.setText(f"Magaza akisi hazir, {username}")
         self.lbl_intro.setText(
-            "Gunluk satis, stok ve raf takibini tek bakista gorebilmeniz icin ana ekran daha kurumsal ve daha sakin hale getirildi."
+            "Gunluk satis, stok ve raf takibini tek ekranda izlemeniz icin panel sade ve hizli olacak sekilde duzenlendi."
         )
         self.lbl_focus.setText(f"{role} oturumu acik | {now.strftime('%d.%m.%Y %H:%M')} | Vardiya akisi stabil")
 
         self._clear_layout(self.stats_row)
-        stats = [
+        cards = [
             ("Aktif Urun", str(len(active_products)), "Satista gorunen urun sayisi", C["accent"], "RAF"),
             ("Toplam Stok", str(total_stock), "Magaza ve depo adedi", C["success"], "DEPO"),
             ("Kritik Urun", str(len(critical_products)), "Hizli takibe alinmasi gerekenler", C["warning"], "ALARM"),
             ("Yaklasan SKT", str(soon_expiring), "7 gun icinde kontrol edilmesi gerekenler", C["danger"], "SKT"),
         ]
         if is_admin(self.user):
-            stats[1] = ("Personel", str(total_users), "Sistemde kayitli ekip", C["success"], "EKIP")
+            cards[1] = ("Personel", str(total_users), "Sistemde kayitli ekip", C["success"], "EKIP")
 
-        for title, value, subtitle, accent, badge in stats:
+        for title, value, subtitle, accent, badge in cards:
             self.stats_row.addWidget(StatCard(title, value, subtitle, accent, badge))
 
         self.sales_table.setRowCount(0)
@@ -268,16 +277,16 @@ class DashboardPage(QWidget):
             self.sales_table.setRowHeight(row, 42)
 
         if recent_sales:
-            last_sale = recent_sales[0]
-            quick_text = (
-                f"Son islem: {last_sale.get('sale_no')}\n"
-                f"Odeme tipi: {last_sale.get('payment_type') or '-'}\n"
-                f"Tutar: TL{float(last_sale.get('grand_total') or 0):.2f}\n"
-                f"Tarih: {last_sale.get('created_at') or '-'}"
+            son_satis = recent_sales[0]
+            ozet = (
+                f"Son islem: {son_satis.get('sale_no')}\n"
+                f"Odeme tipi: {son_satis.get('payment_type') or '-'}\n"
+                f"Tutar: TL{float(son_satis.get('grand_total') or 0):.2f}\n"
+                f"Tarih: {son_satis.get('created_at') or '-'}"
             )
         else:
-            quick_text = "Henuz satis kaydi yok. Ilk satis sonrasinda burada gunluk market ozeti gorunecek."
-        self.lbl_quick_summary.setText(quick_text)
+            ozet = "Henuz satis kaydi yok. Ilk satis sonrasinda burada gunluk market ozeti gorunecek."
+        self.lbl_quick_summary.setText(ozet)
 
         self.critical_table.setRowCount(0)
         for product in critical_products[:6]:
