@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
 from documents.pdf_generator import PDFGenerator
 from repositories.products_repo import get_product_by_barcode, list_products
 from services.sales_service import SaleLineInput, perform_sale
-from ui.style import C, TABLE_SS, btn_danger_ss, btn_primary_ss, btn_success_ss, card_ss, input_ss, shadow
+from ui.style import C, TABLE_SS, btn_danger_ss, btn_primary_ss, btn_success_ss, card_ss, combo_ss, info_box_ss, input_ss, shadow
 from utilities.emoji_utils import emoji_for_product
 
 
@@ -111,10 +111,7 @@ class PersonnelSalesPage(QWidget):
 
         self.cb_payment = QComboBox()
         self.cb_payment.addItems(["💵 Nakit", "💳 Kart"])
-        self.cb_payment.setStyleSheet(
-            f"QComboBox{{background:{C['input_bg']};color:{C['text']};border:1px solid {C['border']};"
-            "border-radius:8px;padding:7px 10px;font-size:13px;}}"
-        )
+        self.cb_payment.setStyleSheet(combo_ss())
         self.cb_payment.setFixedWidth(180)
         pay_row.addWidget(self.cb_payment)
         pay_row.addStretch()
@@ -143,8 +140,7 @@ class PersonnelSalesPage(QWidget):
 
         self.lbl_total = QLabel("Genel Toplam: TL0.00")
         self.lbl_total.setStyleSheet(
-            f"color:{C['accent']};font-size:15px;font-weight:900;background:{C['card']};"
-            f"border:1px solid {C['border']};border-radius:9px;padding:10px 16px;"
+            f"color:{C['accent']};font-size:15px;font-weight:900;{info_box_ss(C['border_soft'])}"
         )
         bottom.addWidget(self.lbl_total)
         bottom.addStretch()
@@ -187,6 +183,11 @@ class PersonnelSalesPage(QWidget):
         self.inp_search.textChanged.connect(self._refresh_product_list)
         product_header.addWidget(self.inp_search, 1)
 
+        self.lbl_product_summary = QLabel()
+        self.lbl_product_summary.setWordWrap(True)
+        self.lbl_product_summary.setStyleSheet(f"color:{C['text_dim']};font-size:12px;font-weight:700;")
+        side_lay.addWidget(self.lbl_product_summary)
+
         self.products_table = QTableWidget()
         self.products_table.setColumnCount(6)
         self.products_table.setHorizontalHeaderLabels(["Ürün", "Barkod", "Fiyat", "Stok", "Son Kullanma", "Durum"])
@@ -223,6 +224,7 @@ class PersonnelSalesPage(QWidget):
         self._refresh_product_list()
         self._render_cart()
         self._update_total()
+        self.inp_barcode.setFocus()
 
     def _clear_cart(self):
         self._cart.clear()
@@ -248,6 +250,9 @@ class PersonnelSalesPage(QWidget):
         self.lbl_total.setText(f"Genel Toplam: TL{gross_total:.2f}")
         self.lbl_tax_summary.setText(f"Ara Toplam: TL{net_total:.2f} | KDV: TL{tax_total:.2f}")
         self.spn_product_count.setValue(total_qty)
+        has_items = bool(self._cart)
+        self.btn_clear.setEnabled(has_items)
+        self.btn_checkout.setEnabled(has_items)
 
     def _add_to_cart(self, product: Dict[str, Any], qty_delta: int = 1):
         barcode = str(product.get("barcode_value") or "").strip()
@@ -394,6 +399,11 @@ class PersonnelSalesPage(QWidget):
             "",
             "Kalemler:",
         ]
+        warnings = sale_res.get("document_warnings") or []
+        if warnings:
+            lines.extend(["", "Belge uyarıları:"])
+            lines.extend(str(warning) for warning in warnings)
+            lines.append("")
         for item in items:
             lines.append(
                 f"{int(item.qty)} x {item.product_name} -> TL{float(item.line_total):.2f} | KDV %{float(item.vat_rate):.0f}"
@@ -408,6 +418,7 @@ class PersonnelSalesPage(QWidget):
 
     def _refresh_product_list(self, query: str = ""):
         products = list_products(include_inactive=False)
+        all_products = products[:]
         search_text = str(query or self.inp_search.text().strip()).strip().lower()
         if search_text:
             products = [
@@ -416,6 +427,16 @@ class PersonnelSalesPage(QWidget):
                 if search_text in str(product.get("name", "")).lower()
                 or search_text in str(product.get("barcode_value", "")).lower()
             ]
+
+        critical_count = sum(
+            1
+            for product in all_products
+            if int(product.get("stock_qty") or 0) <= int(product.get("critical_threshold") or 0)
+        )
+        zero_stock_count = sum(1 for product in all_products if int(product.get("stock_qty") or 0) <= 0)
+        self.lbl_product_summary.setText(
+            f"Listelenen urun: {len(products)} | Kritik stok: {critical_count} | Stokta olmayan: {zero_stock_count}"
+        )
 
         self._product_rows = products
         self.products_table.setRowCount(0)

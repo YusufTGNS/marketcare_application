@@ -1,12 +1,10 @@
 from typing import Optional
 
 import os
-import urllib.request
 import uuid
-from urllib.parse import quote_plus
 
 from PyQt5.QtCore import QDate, Qt
-from PyQt5.QtGui import QColor, QPixmap
+from PyQt5.QtGui import QColor, QPainter, QPixmap
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -31,7 +29,7 @@ from PyQt5.QtWidgets import (
 )
 
 from repositories.products_repo import add_or_update_product, list_products
-from ui.style import C, TABLE_SS, btn_primary_ss, btn_success_ss, card_ss, input_ss, shadow
+from ui.style import C, TABLE_SS, btn_primary_ss, btn_success_ss, card_ss, info_box_ss, input_ss, shadow
 from utilities.emoji_utils import emoji_for_product
 from utilities.vat_utils import infer_vat_rate_by_name, split_gross_price
 
@@ -58,20 +56,20 @@ class AdminProductsPage(QWidget):
         self.tabs.setStyleSheet(
             f"""
             QTabWidget::pane {{
-                border: 1px solid {C['border']};
-                border-radius: 14px;
+                border: 1px solid {C['border_soft']};
+                border-radius: 20px;
                 background: transparent;
                 top: -1px;
             }}
             QTabBar::tab {{
                 background: {C['input_bg']};
                 color: {C['text']};
-                border: 1px solid {C['border']};
+                border: 1px solid {C['border_soft']};
                 min-width: 170px;
                 min-height: 24px;
                 padding: 9px 16px;
-                border-top-left-radius: 10px;
-                border-top-right-radius: 10px;
+                border-top-left-radius: 14px;
+                border-top-right-radius: 14px;
                 margin-right: 6px;
                 font-size: 13px;
                 font-weight: 800;
@@ -204,8 +202,7 @@ class AdminProductsPage(QWidget):
         self.lbl_vat.setWordWrap(True)
         self.lbl_vat.setMinimumHeight(96)
         self.lbl_vat.setStyleSheet(
-            f"background:{C['input_bg']};color:{C['text']};border:1px solid {C['border']};"
-            "border-radius:12px;padding:12px 14px;font-size:12px;font-weight:700;"
+            f"{info_box_ss(C['border_soft'])}color:{C['text']};font-size:12px;font-weight:700;"
         )
         tax_layout.addWidget(self.lbl_vat)
 
@@ -246,6 +243,10 @@ class AdminProductsPage(QWidget):
         sub = QLabel("Ürünler")
         sub.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
         list_layout.addWidget(sub)
+
+        self.lbl_summary = QLabel()
+        self.lbl_summary.setStyleSheet(f"color:{C['text_dim']};font-size:12px;font-weight:700;")
+        list_layout.addWidget(self.lbl_summary)
 
         search_row = QHBoxLayout()
         search_row.setSpacing(10)
@@ -337,12 +338,26 @@ class AdminProductsPage(QWidget):
                 return candidate
         return f"P{uuid.uuid4().hex[:12].upper()}"
 
-    def _download_default_image(self, product_name: str, barcode: str) -> Optional[str]:
-        safe_name = quote_plus(product_name.strip() or "urun")
+    def _create_local_placeholder_image(self, product_name: str, barcode: str) -> Optional[str]:
         out_path = os.path.join(self._products_image_dir(), f"{barcode}_auto.png")
-        url = f"https://placehold.co/600x400/png?text={safe_name}"
         try:
-            urllib.request.urlretrieve(url, out_path)
+            pixmap = QPixmap(600, 400)
+            pixmap.fill(QColor(C["card"]))
+
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.fillRect(24, 24, 552, 352, QColor(C["row_sel"]))
+            painter.setPen(QColor(C["accent"]))
+            painter.drawRect(24, 24, 552, 352)
+            painter.setPen(QColor(C["text"]))
+            painter.setFont(self.font())
+            painter.drawText(48, 160, (product_name.strip() or "Yeni Urun")[:28])
+            painter.setPen(QColor(C["text_sub"]))
+            painter.drawText(48, 205, f"Barkod: {barcode}")
+            painter.drawText(48, 235, "Yerel onizleme gorseli")
+            painter.end()
+
+            pixmap.save(out_path, "PNG")
             return out_path
         except Exception:
             return None
@@ -380,6 +395,11 @@ class AdminProductsPage(QWidget):
                 if query in str(product.get("name", "")).lower()
                 or query in str(product.get("barcode_value", "")).lower()
             ]
+
+        active_count = sum(1 for product in self._all_products if int(product.get("is_active", 1)) == 1)
+        self.lbl_summary.setText(
+            f"Toplam urun: {len(self._all_products)} | Aktif: {active_count} | Listelenen: {len(rows)}"
+        )
 
         self.table.setRowCount(0)
         for product in rows:
@@ -449,12 +469,14 @@ class AdminProductsPage(QWidget):
         self._refresh_vat_preview()
         self.tabs.setCurrentIndex(0)
 
-    def _copy_barcode_from_row(self, row: int, _column: int):
+    def _copy_barcode_from_row(self, row: int, column: int):
+        if column != 1:
+            return
         barcode_item = self.table.item(row, 1)
         if not barcode_item:
             return
         QApplication.clipboard().setText(barcode_item.text())
-        self._bildirim(f"Barkod panoya kopyalandı: {barcode_item.text()}", ok=True)
+        self.lbl_summary.setText(f"Barkod panoya kopyalandi: {barcode_item.text()}")
 
     def _save_product(self):
         try:
@@ -476,7 +498,7 @@ class AdminProductsPage(QWidget):
             vat_rate = self._editing_vat_rate if self._editing_id is not None else infer_vat_rate_by_name(name)[0]
             image_path = self.inp_image_path.text().strip() or None
             if not image_path:
-                image_path = self._download_default_image(name, barcode)
+                image_path = self._create_local_placeholder_image(name, barcode)
 
             add_or_update_product(
                 product_id=self._editing_id,

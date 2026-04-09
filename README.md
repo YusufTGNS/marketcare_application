@@ -1,16 +1,25 @@
 # MarketCare
 
-PyQt5 ile gelistirilmis masaustu market yonetim uygulamasi. Urun, stok, satis, belge ve personel akislari tek panelde toplanir.
+MarketCare, PyQt5 ile geliştirilen masaüstü market yönetim uygulamasıdır. Ürün, stok, satış, belge ve personel akışlarını tek arayüzde toplar.
 
-## Ozellikler
+## Ne Sunuyor?
 
-- Urun ekleme, guncelleme ve arama
-- Otomatik barkod uretme ve panoya kopyalama
-- Urun adina gore KDV orani tahmini
-- Sepet ve satis tamamlama akisi
-- Slip ve fatura PDF olusturma
-- Kritik stok ve stok hareketi takibi
-- Personel ve oturum yonetimi
+- Hızlı giriş ekranı ve oturum hatırlama
+- Ürün ekleme, güncelleme ve barkod üretimi
+- Satış sepeti, KDV hesaplama ve stok düşümü
+- Slip ve fatura PDF üretimi
+- Kritik stok ve SKT takibi
+- Personel oluşturma ve temel kullanıcı yönetimi
+- SQLite tabanlı yerel veri saklama
+
+## Ekranlar
+
+- `Panel`: günlük özet, kritik ürünler ve son satışlar
+- `Satış`: barkod ile ürün ekleme, sepet ve ödeme akışı
+- `Belgeler`: tarih aralığına göre satış belgeleri
+- `Ürün Yönetimi`: ürün kaydı, KDV önizlemesi ve görsel işlemleri
+- `Stok Hareketleri`: stok giriş/çıkış ve ürün durumu güncelleme
+- `Personel Yönetimi`: kullanıcı oluşturma ve veritabanı sıfırlama
 
 ## Kurulum
 
@@ -22,31 +31,23 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-## Calistirma
+## Çalıştırma
 
 ```powershell
 cd C:\...\market
 python market_gui.py
 ```
 
-Ilk acilista veritabani otomatik olarak hazirlanir.
+Uygulama ilk açılışta veritabanını otomatik hazırlar.
 
-## Varsayilan Kullanicilar
+## Varsayılan Hesaplar
 
-| Rol | Kullanici Adi | Sifre |
+| Rol | Kullanıcı Adı | Şifre |
 |---|---|---|
 | Admin | `admin` | `admin123` |
 | Personel | `personel` | `personel123` |
 
-## Paketleme
-
-```powershell
-pyinstaller --noconfirm MarketCare.spec
-```
-
-Dagitim icin `dist\\MarketCare\\` klasorunun tamami kullanilmalidir.
-
-## Proje Yapisi
+## Proje Yapısı
 
 ```text
 market/
@@ -59,17 +60,36 @@ market/
 |-- ui/
 |-- utilities/
 |-- market_gui.py
-|-- MarketCare.spec
 `-- requirements.txt
 ```
 
-## Yerel Dosyalar
+## Veri ve Çıktılar
 
-- `data/market.db`: SQLite veritabani
-- `documents/`: Uretilen slip ve fatura PDF dosyalari
-- `assets/barcodes/`: Uretilen barkod gorselleri
-- `assets/product_images/`: Urun gorselleri
+- `data/market.db`: ana SQLite veritabanı
+- `data/session.json`: beni hatırla oturumu
+- `documents/`: üretilen slip ve fatura PDF dosyaları
+- `assets/barcodes/`: üretilen barkod görselleri
+- `assets/product_images/`: ürün görselleri ve yerel önizlemeler
 
-## Veritabani Sifirlama
+## Notlar
 
-Uygulamadaki sifirlama islemi veritabanini, uretilen PDF dosyalarini ve olusturulan gorselleri temizler.
+- Satış sonrası PDF üretimi başarısız olsa bile satış kaydı korunur.
+- Ürün görseli seçilmezse ağ bağımlılığı olmadan yerel bir önizleme görseli oluşturulur.
+- Kritik stok kontrolü, eşik değeri ve altı için çalışır.
+
+## Geliştirme İçin Kısa Yol
+
+- Veritabanı şemasını: `db/schema.sql`
+- İş kurallarını: `services/`
+- Veri erişimini: `repositories/`
+- Arayüz ekranlarını: `ui/`
+- Yardımcı fonksiyonları: `utilities/`
+
+## Sıfırlama
+
+Personel yönetimi ekranındaki sıfırlama işlemi:
+
+- veritabanını yeniden oluşturur
+- üretilen PDF dosyalarını temizler
+- oluşturulan barkod ve ürün görsellerini temizler
+- oturumu kapatır

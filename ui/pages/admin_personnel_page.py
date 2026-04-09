@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
 
 from repositories.users_repo import list_users
 from services.auth_service import create_user, reset_database
-from ui.style import C, TABLE_SS, btn_danger_ss, btn_success_ss, card_ss, input_ss, shadow
+from ui.style import C, TABLE_SS, btn_danger_ss, btn_success_ss, card_ss, combo_ss, input_ss, shadow
 from utilities.datetime_utils import format_db_datetime_local
 
 
@@ -78,10 +78,7 @@ class AdminPersonnelPage(QWidget):
 
         self.cb_role = QComboBox()
         self.cb_role.addItems(["personnel", "admin"])
-        self.cb_role.setStyleSheet(
-            f"QComboBox{{background:{C['input_bg']};color:{C['text']};border:1px solid {C['border']};"
-            "border-radius:8px;padding:7px 10px;font-size:13px;}}"
-        )
+        self.cb_role.setStyleSheet(combo_ss())
 
         btn_create = QPushButton("Kullanici Ekle")
         btn_create.setStyleSheet(btn_success_ss())
@@ -140,6 +137,9 @@ class AdminPersonnelPage(QWidget):
 
         if not username or not password:
             self._bildirim("Kullanici adi ve sifre zorunludur.", ok=False)
+            return
+        if len(password) < 4:
+            self._bildirim("Parola en az 4 karakter olmalidir.", ok=False)
             return
 
         try:

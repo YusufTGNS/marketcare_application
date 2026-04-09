@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QHeaderView,
 )
 
-from ui.style import C, card_ss, input_ss, btn_primary_ss, btn_success_ss, TABLE_SS, shadow
+from ui.style import C, card_ss, combo_ss, info_box_ss, input_ss, btn_primary_ss, btn_success_ss, TABLE_SS, shadow
 from repositories.products_repo import (
     get_product_by_barcode,
     list_products,
@@ -118,17 +118,11 @@ class AdminStockPage(QWidget):
 
         self.cb_move_type = QComboBox()
         self.cb_move_type.addItems(["Stok Girişi", "Stok Çıkışı"])
-        self.cb_move_type.setStyleSheet(
-            f"QComboBox{{background:{C['input_bg']};color:{C['text']};border:1px solid {C['border']};"
-            "border-radius:8px;padding:7px 10px;font-size:13px;}}"
-        )
+        self.cb_move_type.setStyleSheet(combo_ss())
 
         self.cb_active = QComboBox()
         self.cb_active.addItems(["Aktif", "Pasif"])
-        self.cb_active.setStyleSheet(
-            f"QComboBox{{background:{C['input_bg']};color:{C['text']};border:1px solid {C['border']};"
-            "border-radius:8px;padding:7px 10px;font-size:13px;}}"
-        )
+        self.cb_active.setStyleSheet(combo_ss())
 
         self.inp_note = QLineEdit()
         self.inp_note.setStyleSheet(input_ss())
@@ -175,11 +169,16 @@ class AdminStockPage(QWidget):
         quick_title.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:900;")
         right_lay.addWidget(quick_title)
 
+        self.lbl_inventory_summary = QLabel()
+        self.lbl_inventory_summary.setWordWrap(True)
+        self.lbl_inventory_summary.setStyleSheet(f"color:{C['text_dim']};font-size:12px;font-weight:700;")
+        right_lay.addWidget(self.lbl_inventory_summary)
+
         self.lbl_image = QLabel("Görsel yok")
         self.lbl_image.setAlignment(Qt.AlignCenter)
         self.lbl_image.setMinimumHeight(180)
         self.lbl_image.setStyleSheet(
-            f"background:{C['input_bg']};border:1px solid {C['border']};border-radius:12px;color:{C['text_dim']};"
+            f"{info_box_ss(C['border_soft'])}color:{C['text_dim']};"
         )
         right_lay.addWidget(self.lbl_image)
 
@@ -194,8 +193,7 @@ class AdminStockPage(QWidget):
 
         self.lbl_stock_badge = QLabel("Durum: —")
         self.lbl_stock_badge.setStyleSheet(
-            f"background:{C['input_bg']};border:1px solid {C['border']};border-radius:10px;padding:10px;"
-            f"color:{C['text']};font-size:12px;font-weight:800;"
+            f"{info_box_ss(C['border_soft'])}color:{C['text']};font-size:12px;font-weight:800;"
         )
         right_lay.addWidget(self.lbl_stock_badge)
         right_lay.addStretch()
@@ -272,8 +270,7 @@ class AdminStockPage(QWidget):
             badge_color = C["success"]
             badge_text = f"Durum: Normal stok | {status_text}"
         self.lbl_stock_badge.setStyleSheet(
-            f"background:{C['input_bg']};border:1px solid {badge_color};border-radius:10px;padding:10px;"
-            f"color:{badge_color};font-size:12px;font-weight:900;"
+            f"{info_box_ss(badge_color)}color:{badge_color};font-size:12px;font-weight:900;"
         )
         self.lbl_stock_badge.setText(badge_text)
 
@@ -350,6 +347,7 @@ class AdminStockPage(QWidget):
             self._bildirim(str(e), ok=False)
 
     def refresh(self):
+        selected_barcode = str(self._found_product.get("barcode_value") or "") if self._found_product else ""
         self._refresh_product_list()
 
         rows = list_stock_movements(limit=200)
@@ -372,6 +370,8 @@ class AdminStockPage(QWidget):
             self.table.setItem(r, 9, QTableWidgetItem(str(int(rdata.get("user_id") or 0))))
 
         self._refresh_skt_status()
+        if selected_barcode:
+            self._set_found_product(get_product_by_barcode(selected_barcode))
 
     def _refresh_product_list(self, query: str = ""):
         products = list_products(include_inactive=True)
@@ -382,6 +382,17 @@ class AdminStockPage(QWidget):
                 for p in products
                 if q in str(p.get("name", "")).lower() or q in str(p.get("barcode_value", "")).lower()
             ]
+
+        active_count = sum(1 for product in products if int(product.get("is_active", 1)) == 1)
+        critical_count = sum(
+            1
+            for product in products
+            if int(product.get("is_active", 1)) == 1
+            and int(product.get("stock_qty") or 0) <= int(product.get("critical_threshold") or 0)
+        )
+        self.lbl_inventory_summary.setText(
+            f"Aktif urun: {active_count} | Kritik stok: {critical_count} | Listelenen: {len(products)}"
+        )
 
         self._product_rows = products
         self.products_table.setRowCount(0)

@@ -107,6 +107,7 @@ def _clear_generated_assets() -> None:
 
 def login(username: str, password: str) -> AuthResult:
     bootstrap_db()
+    username = str(username or "").strip()
     user = get_user_by_username(username)
     if not user:
         return AuthResult(ok=False, error="Kullanıcı bulunamadı.")
@@ -134,9 +135,15 @@ def login_with_remember(username: str) -> str:
 
 def create_user(username: str, password: str, role: str = "personnel") -> Dict[str, Any]:
     bootstrap_db()
+    username = str(username or "").strip()
+    password = str(password or "")
 
     if not username or not password:
         raise ValueError("Kullanıcı adı ve parola zorunludur.")
+    if len(username) < 3:
+        raise ValueError("Kullanıcı adı en az 3 karakter olmalıdır.")
+    if len(password) < 4:
+        raise ValueError("Parola en az 4 karakter olmalıdır.")
 
     role = str(role).strip().lower()
     if role not in ("admin", "personnel"):

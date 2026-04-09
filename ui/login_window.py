@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QCheckBox,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -23,71 +24,181 @@ class LoginWindow(QMainWindow):
         super().__init__(parent)
         self.on_success = on_success
 
-        self.setWindowTitle("MarketCare - Yonetim Girisi")
-        self.setMinimumSize(620, 520)
+        self.setWindowTitle("MarketCare - Kurumsal Giris")
+        self.setMinimumSize(980, 620)
         self._build()
 
     def _build(self) -> None:
-        kok = QWidget()
-        kok.setStyleSheet(f"background:{C['bg']};")
-        self.setCentralWidget(kok)
+        root = QWidget()
+        root.setStyleSheet(
+            f"""
+            background:qlineargradient(x1:0,y1:0,x2:1,y2:1,
+                stop:0 {C['sidebar']}, stop:0.55 {C['bg']}, stop:1 {C['bg_soft']});
+            """
+        )
+        self.setCentralWidget(root)
 
-        ana_dizilim = QVBoxLayout(kok)
-        ana_dizilim.setContentsMargins(36, 30, 36, 30)
-        ana_dizilim.setSpacing(20)
+        outer = QVBoxLayout(root)
+        outer.setContentsMargins(42, 34, 42, 34)
+        outer.setSpacing(0)
 
-        kahraman = QFrame()
-        kahraman.setStyleSheet(
+        shell = QFrame()
+        shell.setStyleSheet(
             f"""
             QFrame {{
-                border-radius: 18px;
-                background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-                    stop:0 #1F2F27, stop:0.6 {C['accent2']}, stop:1 {C['accent']});
+                background: rgba(9, 16, 30, 0.92);
+                border: 1px solid {C['border_soft']};
+                border-radius: 28px;
             }}
             """
         )
-        shadow(kahraman, blur=24, dy=6)
-        kahraman_dizilim = QVBoxLayout(kahraman)
-        kahraman_dizilim.setContentsMargins(24, 22, 24, 22)
-        kahraman_dizilim.setSpacing(6)
+        shadow(shell, blur=28, dy=8)
+        outer.addWidget(shell, stretch=1)
 
-        baslik = QLabel("MarketCare")
-        baslik.setStyleSheet("color:white;font-size:28px;font-weight:900;letter-spacing:0.4px;")
-        alt_baslik = QLabel("Satis ve stok yonetimine hizli giris yapin.")
-        alt_baslik.setStyleSheet("color:rgba(255,255,255,0.78);font-size:13px;font-weight:600;")
-        kahraman_dizilim.addWidget(baslik)
-        kahraman_dizilim.addWidget(alt_baslik)
-        ana_dizilim.addWidget(kahraman)
+        shell_layout = QHBoxLayout(shell)
+        shell_layout.setContentsMargins(0, 0, 0, 0)
+        shell_layout.setSpacing(0)
 
-        kart = QWidget()
-        kart.setStyleSheet(card_ss())
-        shadow(kart)
-        kart_dizilim = QVBoxLayout(kart)
-        kart_dizilim.setContentsMargins(22, 22, 22, 22)
-        kart_dizilim.setSpacing(14)
-        ana_dizilim.addWidget(kart)
+        left_panel = QFrame()
+        left_panel.setMinimumWidth(420)
+        left_panel.setStyleSheet(
+            f"""
+            QFrame {{
+                border-top-left-radius: 24px;
+                border-bottom-left-radius: 24px;
+                background:qlineargradient(x1:0,y1:0,x2:1,y2:1,
+                    stop:0 #0F3C88, stop:0.55 {C['accent2']}, stop:1 {C['accent']});
+            }}
+            """
+        )
+        shell_layout.addWidget(left_panel, 5)
 
-        kart_baslik = QLabel("Oturum Ac")
-        kart_baslik.setStyleSheet(f"color:{C['text']};font-size:18px;font-weight:900;")
-        kart_bilgi = QLabel("Kullanici adinizi ve sifrenizi girin.")
-        kart_bilgi.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:700;")
-        kart_dizilim.addWidget(kart_baslik)
-        kart_dizilim.addWidget(kart_bilgi)
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setContentsMargins(34, 34, 34, 34)
+        left_layout.setSpacing(18)
 
-        kullanici_etiketi = QLabel("Kullanici Adi")
-        kullanici_etiketi.setFixedWidth(120)
-        kullanici_etiketi.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:800;")
+        brand_badge = QLabel("MARKETCARE SUITE")
+        brand_badge.setStyleSheet(
+            "color:rgba(255,255,255,0.84);font-size:11px;font-weight:900;letter-spacing:1px;background:transparent;"
+        )
+        left_layout.addWidget(brand_badge)
+
+        title = QLabel("Perakende operasyonlarini tek merkezden yonetin.")
+        title.setWordWrap(True)
+        title.setStyleSheet("color:white;font-size:31px;font-weight:900;line-height:1.2;background:transparent;")
+        left_layout.addWidget(title)
+
+        intro = QLabel(
+            "Satis, stok, belge ve personel akislarini daha hizli, daha net ve daha denetlenebilir bir yapida yonetin."
+        )
+        intro.setWordWrap(True)
+        intro.setStyleSheet(
+            "color:rgba(255,255,255,0.82);font-size:14px;font-weight:600;background:transparent;line-height:1.4;"
+        )
+        left_layout.addWidget(intro)
+
+        highlight_card = QFrame()
+        highlight_card.setStyleSheet(
+            """
+            QFrame {
+                background: rgba(255,255,255,0.10);
+                border: 1px solid rgba(255,255,255,0.14);
+                border-radius: 22px;
+            }
+            """
+        )
+        highlight_layout = QVBoxLayout(highlight_card)
+        highlight_layout.setContentsMargins(20, 18, 20, 18)
+        highlight_layout.setSpacing(12)
+        left_layout.addWidget(highlight_card)
+
+        for text in (
+            "Canli stok gorunurlugu ve kritik esik takibi",
+            "PDF slip ve fatura uretimi ile kayit duzeni",
+            "Yetkili personel girisi ve guvenli oturum akisi",
+        ):
+            item = QLabel(f"• {text}")
+            item.setWordWrap(True)
+            item.setStyleSheet("color:white;font-size:13px;font-weight:700;background:transparent;")
+            highlight_layout.addWidget(item)
+
+        left_layout.addStretch()
+
+        footer = QLabel("Kurumsal market operasyonlari icin sade, resmi ve hizli masaustu deneyimi.")
+        footer.setWordWrap(True)
+        footer.setStyleSheet("color:rgba(255,255,255,0.74);font-size:12px;font-weight:600;background:transparent;")
+        left_layout.addWidget(footer)
+
+        right_panel = QWidget()
+        right_panel.setStyleSheet("background:transparent;")
+        shell_layout.addWidget(right_panel, 6)
+
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(42, 42, 42, 42)
+        right_layout.setSpacing(18)
+
+        header = QLabel("Oturum Ac")
+        header.setStyleSheet(f"color:{C['text']};font-size:28px;font-weight:900;")
+        right_layout.addWidget(header)
+
+        subheader = QLabel("Yetkili hesap bilgileriniz ile sisteme guvenli giris yapin.")
+        subheader.setWordWrap(True)
+        subheader.setStyleSheet(f"color:{C['text_sub']};font-size:13px;font-weight:700;")
+        right_layout.addWidget(subheader)
+
+        trust_row = QHBoxLayout()
+        trust_row.setSpacing(10)
+        right_layout.addLayout(trust_row)
+
+        for badge_text in ("Yetkili Giris", "Lokal Veri", "Oturum Kaydi"):
+            badge = QLabel(badge_text)
+            badge.setAlignment(Qt.AlignCenter)
+            badge.setStyleSheet(
+                f"""
+                background:{C['row_sel']};
+                color:{C['accent']};
+                border:1px solid {C['border_soft']};
+                border-radius:15px;
+                padding:8px 10px;
+                font-size:11px;
+                font-weight:800;
+                """
+            )
+            trust_row.addWidget(badge)
+
+        form_card = QFrame()
+        form_card.setStyleSheet(card_ss())
+        shadow(form_card, blur=18, dy=4)
+        right_layout.addWidget(form_card)
+
+        form_layout = QVBoxLayout(form_card)
+        form_layout.setContentsMargins(24, 24, 24, 24)
+        form_layout.setSpacing(16)
+
+        form_grid = QGridLayout()
+        form_grid.setHorizontalSpacing(12)
+        form_grid.setVerticalSpacing(12)
+        form_layout.addLayout(form_grid)
+
+        username_label = QLabel("Kullanici Adi")
+        username_label.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:800;")
         self.inp_username = QLineEdit()
-        self.inp_username.setPlaceholderText("orn. admin")
+        self.inp_username.setPlaceholderText("Kullanıcı Adı")
         self.inp_username.setStyleSheet(input_ss())
+        self.inp_username.setMinimumHeight(46)
 
-        sifre_etiketi = QLabel("Sifre")
-        sifre_etiketi.setFixedWidth(120)
-        sifre_etiketi.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:800;")
+        password_label = QLabel("Sifre")
+        password_label.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:800;")
         self.inp_password = QLineEdit()
         self.inp_password.setPlaceholderText("Sifrenizi girin")
         self.inp_password.setEchoMode(QLineEdit.Password)
         self.inp_password.setStyleSheet(input_ss())
+        self.inp_password.setMinimumHeight(46)
+
+        form_grid.addWidget(username_label, 0, 0)
+        form_grid.addWidget(self.inp_username, 1, 0)
+        form_grid.addWidget(password_label, 2, 0)
+        form_grid.addWidget(self.inp_password, 3, 0)
 
         self.cb_show_pw = QCheckBox("Sifreyi goster")
         self.cb_show_pw.setStyleSheet(
@@ -100,38 +211,37 @@ class LoginWindow(QMainWindow):
             f"color:{C['text_sub']};font-size:12px;font-weight:700;background:transparent;"
         )
 
-        kullanici_satiri = QHBoxLayout()
-        kullanici_satiri.setSpacing(12)
-        kullanici_satiri.addWidget(kullanici_etiketi)
-        kullanici_satiri.addWidget(self.inp_username, 1)
+        option_row = QHBoxLayout()
+        option_row.setSpacing(14)
+        option_row.addWidget(self.cb_show_pw)
+        option_row.addWidget(self.cb_remember)
+        option_row.addStretch()
+        form_layout.addLayout(option_row)
 
-        sifre_satiri = QHBoxLayout()
-        sifre_satiri.setSpacing(12)
-        sifre_satiri.addWidget(sifre_etiketi)
-        sifre_satiri.addWidget(self.inp_password, 1)
+        info_note = QLabel("Varsayilan hesaplar README dosyasinda yer alir. Giris basarisiz olursa sistem uyarisi gosterilir.")
+        info_note.setWordWrap(True)
+        info_note.setStyleSheet(
+            f"background:rgba(255,255,255,0.03);color:{C['text_dim']};border:1px solid {C['border_soft']};"
+            "border-radius:15px;padding:10px 12px;font-size:12px;font-weight:700;"
+        )
+        form_layout.addWidget(info_note)
 
-        kart_dizilim.addLayout(kullanici_satiri)
-        kart_dizilim.addLayout(sifre_satiri)
-
-        secenek_satiri = QHBoxLayout()
-        secenek_satiri.setSpacing(12)
-        secenek_satiri.addWidget(self.cb_show_pw)
-        secenek_satiri.addWidget(self.cb_remember)
-        secenek_satiri.addStretch()
-        kart_dizilim.addLayout(secenek_satiri)
-
-        buton_satiri = QHBoxLayout()
-        buton_satiri.setSpacing(10)
-        buton_satiri.addStretch()
+        button_row = QHBoxLayout()
+        button_row.addStretch()
         self.btn_login = QPushButton("Giris Yap")
         self.btn_login.setStyleSheet(btn_primary_ss())
         self.btn_login.setCursor(Qt.PointingHandCursor)
-        self.btn_login.setFixedWidth(160)
-        buton_satiri.addWidget(self.btn_login)
-        kart_dizilim.addLayout(buton_satiri)
+        self.btn_login.setMinimumWidth(180)
+        self.btn_login.setMinimumHeight(46)
+        button_row.addWidget(self.btn_login)
+        form_layout.addLayout(button_row)
+
+        right_layout.addStretch()
 
         self.btn_login.clicked.connect(self._try_login)
         self.inp_password.returnPressed.connect(self._try_login)
+        self.inp_username.returnPressed.connect(self.inp_password.setFocus)
+        self.inp_username.setFocus()
 
     def _toggle_show_password(self) -> None:
         self.inp_password.setEchoMode(QLineEdit.Normal if self.cb_show_pw.isChecked() else QLineEdit.Password)

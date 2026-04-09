@@ -17,6 +17,9 @@ def get_product_by_id(product_id: int) -> Optional[Dict[str, Any]]:
 
 
 def get_product_by_barcode(barcode_value: str) -> Optional[Dict[str, Any]]:
+    barcode_value = str(barcode_value or "").strip()
+    if not barcode_value:
+        return None
     with get_connection() as conn:
         row = conn.execute(
             """
@@ -136,7 +139,7 @@ def list_critical_products() -> List[Dict[str, Any]]:
             SELECT id, name, barcode_value, unit_price, vat_rate, expiration_date,
                    image_path, icon_path, stock_qty, critical_threshold, created_at
             FROM products
-            WHERE is_active = 1 AND stock_qty < critical_threshold
+            WHERE is_active = 1 AND stock_qty <= critical_threshold
             ORDER BY stock_qty ASC
             """
         ).fetchall()

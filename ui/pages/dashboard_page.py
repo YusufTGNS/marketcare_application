@@ -18,7 +18,7 @@ from repositories.products_repo import list_critical_products, list_products
 from repositories.sales_repo import list_sales, list_sales_for_user
 from repositories.users_repo import list_users
 from services.permission_service import is_admin
-from ui.style import C, TABLE_SS, card_ss, shadow
+from ui.style import C, TABLE_SS, card_ss, info_box_ss, shadow
 
 
 class StatCard(QFrame):
@@ -36,8 +36,8 @@ class StatCard(QFrame):
             f"""
             QFrame {{
                 background: {C['card']};
-                border: 1px solid {C['border']};
-                border-radius: 14px;
+                border: 1px solid {C['border_soft']};
+                border-radius: 18px;
             }}
             """
         )
@@ -58,8 +58,8 @@ class StatCard(QFrame):
 
         badge_label = QLabel(badge)
         badge_label.setStyleSheet(
-            f"background:{C['row_sel']};color:{accent};border:1px solid {C['border']};"
-            "border-radius:10px;padding:4px 8px;font-size:10px;font-weight:900;"
+            f"background:rgba(255,255,255,0.05);color:{accent};border:1px solid {C['border_soft']};"
+            "border-radius:13px;padding:5px 9px;font-size:10px;font-weight:900;"
         )
         top.addWidget(badge_label)
 
@@ -88,7 +88,7 @@ class DashboardPage(QWidget):
             QFrame {{
                 border-radius: 20px;
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-                    stop:0 #20332A, stop:0.55 {C['accent2']}, stop:1 {C['accent']});
+                    stop:0 #14315F, stop:0.55 {C['accent2']}, stop:1 {C['accent']});
                 border: 1px solid rgba(255,255,255,0.08);
             }}
             """
@@ -112,7 +112,7 @@ class DashboardPage(QWidget):
 
         status_badge = QLabel("RAF HAZIR")
         status_badge.setStyleSheet(
-            f"background:rgba(17,22,28,0.28);color:{C['accent']};border-radius:11px;padding:5px 10px;"
+            "background:rgba(9,16,30,0.18);color:white;border-radius:13px;padding:6px 10px;"
             "font-size:10px;font-weight:900;"
         )
         badge_row.addWidget(status_badge)
@@ -129,10 +129,15 @@ class DashboardPage(QWidget):
 
         self.lbl_focus = QLabel()
         self.lbl_focus.setStyleSheet(
-            "color:#F2F0EA;font-size:12px;font-weight:800;background:rgba(17,22,28,0.26);"
-            "padding:8px 12px;border-radius:12px;"
+            f"{info_box_ss('rgba(125,211,252,0.14)')}color:#F2F0EA;font-size:12px;font-weight:800;"
         )
         hero_layout.addWidget(self.lbl_focus)
+
+        self.lbl_v2_note = QLabel()
+        self.lbl_v2_note.setStyleSheet(
+            f"{info_box_ss('rgba(125,211,252,0.12)')}color:rgba(255,255,255,0.88);font-size:12px;font-weight:700;"
+        )
+        hero_layout.addWidget(self.lbl_v2_note)
 
         self.stats_row = QHBoxLayout()
         self.stats_row.setSpacing(14)
@@ -187,8 +192,8 @@ class DashboardPage(QWidget):
 
         operation_badge = QLabel("GUNLUK OPERASYON")
         operation_badge.setStyleSheet(
-            f"background:{C['row_sel']};color:{C['accent2']};border:1px solid {C['border']};"
-            "border-radius:12px;padding:8px 10px;font-size:11px;font-weight:900;"
+            f"background:rgba(255,255,255,0.04);color:{C['accent']};border:1px solid {C['border_soft']};"
+            "border-radius:15px;padding:8px 10px;font-size:11px;font-weight:900;"
         )
         side_layout.addWidget(operation_badge)
 
@@ -247,11 +252,22 @@ class DashboardPage(QWidget):
             recent_sales = list_sales_for_user(user_id=int(self.user.get("id", 0)), limit=6)
             total_users = 1
 
+        stock_health = "Stok dengeli"
+        if critical_products:
+            stock_health = f"{len(critical_products)} urun kritik stokta"
+        if soon_expiring:
+            stock_health += f" | {soon_expiring} urun SKT takibinde"
+
         self.lbl_welcome.setText(f"Magaza akisi hazir, {username}")
         self.lbl_intro.setText(
             "Gunluk satis, stok ve raf takibini tek ekranda izlemeniz icin panel sade ve hizli olacak sekilde duzenlendi."
         )
-        self.lbl_focus.setText(f"{role} oturumu acik | {now.strftime('%d.%m.%Y %H:%M')} | Vardiya akisi stabil")
+        self.lbl_focus.setText(
+            f"{role} oturumu acik | {now.strftime('%d.%m.%Y %H:%M')} | {stock_health}"
+        )
+        self.lbl_v2_note.setText(
+            "V2 panel: daha yumusak kutular, daha net statu akisi ve operasyon odakli okunabilirlik."
+        )
 
         self._clear_layout(self.stats_row)
         cards = [

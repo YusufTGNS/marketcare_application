@@ -31,6 +31,53 @@ def _generate_sale_no(conn) -> str:
     return f"MC-{today}-{last_seq + 1:04d}"
 
 
+def _generate_sale_documents(
+    *,
+    pdf_generator,
+    sale_no: str,
+    created_at: str,
+    customer_name: Optional[str],
+    payment_type: Optional[str],
+    total_amount: float,
+    tax_amount: float,
+    grand_total: float,
+    items,
+) -> tuple[Optional[str], Optional[str], List[str]]:
+    slip_path: Optional[str] = None
+    invoice_path: Optional[str] = None
+    warnings: List[str] = []
+
+    try:
+        slip_path = pdf_generator.generate_slip_pdf(
+            sale_no=sale_no,
+            created_at=created_at,
+            customer_name=customer_name,
+            payment_type=payment_type,
+            total_amount=total_amount,
+            tax_amount=tax_amount,
+            grand_total=grand_total,
+            items=items,
+        )
+    except Exception as exc:
+        warnings.append(f"Slip oluşturulamadı: {exc}")
+
+    try:
+        invoice_path = pdf_generator.generate_invoice_pdf(
+            sale_no=sale_no,
+            created_at=created_at,
+            customer_name=customer_name,
+            payment_type=payment_type,
+            total_amount=total_amount,
+            tax_amount=tax_amount,
+            grand_total=grand_total,
+            items=items,
+        )
+    except Exception as exc:
+        warnings.append(f"Fatura oluşturulamadı: {exc}")
+
+    return slip_path, invoice_path, warnings
+
+
 def perform_sale(
     *,
     lines: List[SaleLineInput],
@@ -41,6 +88,9 @@ def perform_sale(
 ) -> Dict[str, Any]:
     if not lines:
         raise ValueError("Sepet boş olamaz.")
+
+    customer_name = str(customer_name or "").strip() or None
+    payment_type = str(payment_type or "").strip() or "Belirtilmedi"
 
     user = get_user_by_id(int(created_by_user_id))
     role = user_role(user or {})
@@ -201,17 +251,8 @@ def perform_sale(
     except Exception:
         pass
 
-    slip_path = pdf_generator.generate_slip_pdf(
-        sale_no=sale_no,
-        created_at=created_at,
-        customer_name=customer_name,
-        payment_type=payment_type,
-        total_amount=net_total,
-        tax_amount=tax_total,
-        grand_total=gross_total,
-        items=items_view,
-    )
-    invoice_path = pdf_generator.generate_invoice_pdf(
+    slip_path, invoice_path, document_warnings = _generate_sale_documents(
+        pdf_generator=pdf_generator,
         sale_no=sale_no,
         created_at=created_at,
         customer_name=customer_name,
@@ -243,4 +284,5 @@ def perform_sale(
         "tax_amount": tax_total,
         "grand_total": gross_total,
         "items": items_view,
+        "document_warnings": document_warnings,
     }

@@ -27,7 +27,7 @@ class SideBtn(QPushButton):
     def __init__(self, icon: str, text: str, parent: Optional[QWidget] = None):
         super().__init__(f"  {icon}  {text}", parent)
         self.setCheckable(True)
-        self.setFixedHeight(48)
+        self.setFixedHeight(52)
         self.setCursor(Qt.PointingHandCursor)
         self._refresh(False)
 
@@ -35,20 +35,37 @@ class SideBtn(QPushButton):
         if active:
             self.setStyleSheet(
                 f"""
-                QPushButton{{background:{C['row_sel']};color:{C['accent2']};
-                    border:none;border-left:3px solid {C['accent']};
-                    border-radius:0;text-align:left;padding-left:16px;
-                    font-size:13px;font-weight:700;}}
+                QPushButton {{
+                    background:qlineargradient(x1:0,y1:0,x2:1,y2:0,
+                        stop:0 rgba(37,99,235,0.28), stop:1 rgba(56,189,248,0.16));
+                    color:{C['text']};
+                    border:1px solid rgba(125,211,252,0.22);
+                    border-radius:16px;
+                    text-align:left;
+                    padding-left:18px;
+                    font-size:13px;
+                    font-weight:800;
+                }}
                 """
             )
         else:
             self.setStyleSheet(
                 f"""
-                QPushButton{{background:transparent;color:{C['text_sub']};
-                    border:none;border-left:3px solid transparent;
-                    border-radius:0;text-align:left;padding-left:16px;font-size:13px;}}
-                QPushButton:hover{{background:{C['card']};color:{C['text']};
-                    border-left:3px solid {C['accent']};}}
+                QPushButton {{
+                    background:transparent;
+                    color:{C['text_sub']};
+                    border:1px solid transparent;
+                    border-radius:16px;
+                    text-align:left;
+                    padding-left:18px;
+                    font-size:13px;
+                    font-weight:700;
+                }}
+                QPushButton:hover {{
+                    background:{C['card_soft']};
+                    color:{C['text']};
+                    border:1px solid {C['border_soft']};
+                }}
                 """
             )
 
@@ -70,8 +87,8 @@ class MainWindow(QMainWindow):
 
         rol = str(user.get("role", "")).upper()
         self.setWindowTitle(f"MarketCare - {rol}")
-        self.setMinimumSize(1150, 750)
-        self.resize(1320, 820)
+        self.setMinimumSize(1220, 780)
+        self.resize(1400, 860)
         self.setStyleSheet(f"QMainWindow{{background:{C['bg']};color:{C['text']};}}")
 
         self._build_ui()
@@ -83,47 +100,61 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(merkez)
 
         ana_dizilim = QHBoxLayout(merkez)
-        ana_dizilim.setContentsMargins(0, 0, 0, 0)
-        ana_dizilim.setSpacing(0)
+        ana_dizilim.setContentsMargins(18, 18, 18, 18)
+        ana_dizilim.setSpacing(18)
 
         yan_menu = QFrame()
-        yan_menu.setFixedWidth(240)
-        yan_menu.setStyleSheet(f"background:{C['sidebar']};border-right:1px solid {C['border']};")
-
-        yan_dizilim = QVBoxLayout(yan_menu)
-        yan_dizilim.setContentsMargins(0, 0, 0, 18)
-        yan_dizilim.setSpacing(0)
-
-        logo = QFrame()
-        logo.setFixedHeight(86)
-        logo.setStyleSheet(
+        yan_menu.setFixedWidth(286)
+        yan_menu.setStyleSheet(
             f"""
-            background:qlineargradient(x1:0,y1:0,x2:1,y2:1,
-                stop:0 {C['accent2']},stop:1 {C['accent']});
+            background:{C['sidebar']};
+            border:1px solid {C['border_soft']};
+            border-radius:28px;
             """
         )
-        logo_dizilim = QVBoxLayout(logo)
-        logo_dizilim.setContentsMargins(16, 14, 16, 12)
+        ana_dizilim.addWidget(yan_menu)
 
-        baslik = QLabel("MarketCare")
-        baslik.setStyleSheet("color:white;font-size:16px;font-weight:900;background:transparent;")
-        alt_baslik = QLabel("Mini Market Yonetimi")
-        alt_baslik.setStyleSheet(
-            "color:rgba(255,255,255,0.72);font-size:10px;font-weight:700;background:transparent;"
+        yan_dizilim = QVBoxLayout(yan_menu)
+        yan_dizilim.setContentsMargins(18, 18, 18, 18)
+        yan_dizilim.setSpacing(10)
+
+        brand_card = QFrame()
+        brand_card.setStyleSheet(
+            f"""
+            background:qlineargradient(x1:0,y1:0,x2:1,y2:1,
+                stop:0 #0F3C88, stop:0.55 {C['accent2']}, stop:1 {C['accent']});
+            border-radius:20px;
+            """
         )
-        logo_dizilim.addWidget(baslik)
-        logo_dizilim.addWidget(alt_baslik)
-        yan_dizilim.addWidget(logo)
-        yan_dizilim.addSpacing(14)
+        brand_card.setMinimumHeight(132)
+        yan_dizilim.addWidget(brand_card)
+
+        brand_layout = QVBoxLayout(brand_card)
+        brand_layout.setContentsMargins(18, 16, 18, 16)
+        brand_layout.setSpacing(6)
+
+        brand_badge = QLabel("MARKETCARE")
+        brand_badge.setStyleSheet("color:rgba(255,255,255,0.82);font-size:10px;font-weight:900;letter-spacing:1px;")
+        brand_layout.addWidget(brand_badge)
+
+        brand_title = QLabel("Kurumsal Market Yönetimi")
+        brand_title.setWordWrap(True)
+        brand_title.setStyleSheet("color:white;font-size:20px;font-weight:900;")
+        brand_layout.addWidget(brand_title)
+
+        brand_subtitle = QLabel("Satış, stok, belge ve ekip akışları tek panelde")
+        brand_subtitle.setWordWrap(True)
+        brand_subtitle.setStyleSheet("color:rgba(255,255,255,0.78);font-size:12px;font-weight:700;")
+        brand_layout.addWidget(brand_subtitle)
 
         self.nav_buttons: List[SideBtn] = []
         sayfalar: List[Tuple[str, str, QWidget]] = [
-            ("🏠", "Panel", DashboardPage(user=self.user)),
-            ("🛒", "Satis", PersonnelSalesPage(user=self.user)),
-            ("🧾", "Belgeler", AdminInvoicesPage(user=self.user)),
+            ("⌂", "Panel", DashboardPage(user=self.user)),
+            ("⌕", "Satis", PersonnelSalesPage(user=self.user)),
+            ("▣", "Belgeler", AdminInvoicesPage(user=self.user)),
         ]
 
-        self._add_sidebar_section(yan_dizilim, "Genel")
+        self._add_sidebar_section(yan_dizilim, "Operasyon")
         for icon, ad, _ in sayfalar:
             buton = SideBtn(icon, ad)
             buton.clicked.connect(lambda _, page_name=ad: self._goto(page_name))
@@ -133,9 +164,9 @@ class MainWindow(QMainWindow):
         if is_admin(self.user):
             self._add_sidebar_section(yan_dizilim, "Yonetim")
             yonetici_sayfalari = [
-                ("📦", "Urunler", AdminProductsPage()),
+                ("◫", "Urunler", AdminProductsPage()),
                 ("↕", "Stok Hareketleri", AdminStockPage(user=self.user)),
-                ("👥", "Personel", AdminPersonnelPage(user=self.user)),
+                ("◉", "Personel", AdminPersonnelPage(user=self.user)),
             ]
             for sayfa in yonetici_sayfalari:
                 sayfalar.append(sayfa)
@@ -146,69 +177,145 @@ class MainWindow(QMainWindow):
 
         yan_dizilim.addStretch()
 
-        self.lbl_time = QLabel()
-        self.lbl_time.setAlignment(Qt.AlignCenter)
-        self.lbl_time.setStyleSheet(f"color:{C['text_dim']};font-size:11px;background:transparent;")
-        yan_dizilim.addWidget(self.lbl_time)
+        session_card = QFrame()
+        session_card.setStyleSheet(
+            f"""
+            background:{C['card_soft']};
+            border:1px solid {C['border_soft']};
+            border-radius:20px;
+            """
+        )
+        yan_dizilim.addWidget(session_card)
 
-        ana_dizilim.addWidget(yan_menu)
+        session_layout = QVBoxLayout(session_card)
+        session_layout.setContentsMargins(16, 14, 16, 14)
+        session_layout.setSpacing(6)
+
+        lbl_session_title = QLabel("Aktif Oturum")
+        lbl_session_title.setStyleSheet(f"color:{C['text_dim']};font-size:11px;font-weight:900;")
+        session_layout.addWidget(lbl_session_title)
+
+        lbl_session_user = QLabel(str(self.user.get("username", "")))
+        lbl_session_user.setStyleSheet(f"color:{C['text']};font-size:16px;font-weight:900;")
+        session_layout.addWidget(lbl_session_user)
+
+        lbl_session_role = QLabel(f"Yetki: {str(self.user.get('role', '')).upper()}")
+        lbl_session_role.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:700;")
+        session_layout.addWidget(lbl_session_role)
+
+        self.lbl_time = QLabel()
+        self.lbl_time.setAlignment(Qt.AlignLeft)
+        self.lbl_time.setStyleSheet(f"color:{C['accent']};font-size:12px;font-weight:800;")
+        session_layout.addWidget(self.lbl_time)
 
         icerik = QWidget()
-        icerik.setStyleSheet(f"background:{C['bg']};")
+        icerik.setStyleSheet("background:transparent;")
+        ana_dizilim.addWidget(icerik, stretch=1)
+
         icerik_dizilim = QVBoxLayout(icerik)
         icerik_dizilim.setContentsMargins(0, 0, 0, 0)
-        icerik_dizilim.setSpacing(0)
+        icerik_dizilim.setSpacing(16)
 
         ust_cubuk = QFrame()
-        ust_cubuk.setFixedHeight(64)
-        ust_cubuk.setStyleSheet(f"background:{C['sidebar']};border-bottom:1px solid {C['border']};")
+        ust_cubuk.setFixedHeight(96)
+        ust_cubuk.setStyleSheet(
+            f"""
+            background:{C['sidebar']};
+            border:1px solid {C['border_soft']};
+            border-radius:28px;
+            """
+        )
+        icerik_dizilim.addWidget(ust_cubuk)
+
         ust_dizilim = QHBoxLayout(ust_cubuk)
-        ust_dizilim.setContentsMargins(22, 0, 22, 0)
-        ust_dizilim.setSpacing(12)
+        ust_dizilim.setContentsMargins(24, 18, 24, 18)
+        ust_dizilim.setSpacing(14)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(2)
+        ust_dizilim.addLayout(title_col)
 
         self.lbl_page = QLabel("Panel")
-        self.lbl_page.setStyleSheet(f"color:{C['text_sub']};font-size:12px;background:transparent;")
-        ust_dizilim.addWidget(self.lbl_page)
+        self.lbl_page.setStyleSheet(f"color:{C['text']};font-size:24px;font-weight:900;background:transparent;")
+        title_col.addWidget(self.lbl_page)
+
+        self.lbl_page_hint = QLabel("Operasyon ekranı hazır.")
+        self.lbl_page_hint.setStyleSheet(f"color:{C['text_sub']};font-size:12px;font-weight:700;background:transparent;")
+        title_col.addWidget(self.lbl_page_hint)
+
         ust_dizilim.addStretch()
 
-        kullanici_etiketi = QLabel(
-            f"👤  {self.user.get('username', '')} ({str(self.user.get('role', '')).upper()})"
-        )
-        kullanici_etiketi.setStyleSheet(f"color:{C['text_sub']};font-size:12px;background:transparent;")
-        ust_dizilim.addWidget(kullanici_etiketi)
-
-        durum_etiketi = QLabel("MARKET AKTIF")
+        durum_etiketi = QLabel("SISTEM AKTIF")
         durum_etiketi.setStyleSheet(
-            f"background:{C['row_sel']};color:{C['accent']};border:1px solid {C['border']};"
-            "border-radius:11px;padding:6px 10px;font-size:10px;font-weight:900;"
+            f"""
+            background:rgba(56,189,248,0.10);
+            color:{C['accent']};
+            border:1px solid rgba(125,211,252,0.14);
+            border-radius:16px;
+            padding:9px 12px;
+            font-size:11px;
+            font-weight:900;
+            """
         )
         ust_dizilim.addWidget(durum_etiketi)
+
+        kullanici_etiketi = QLabel(f"{self.user.get('username', '')} | {str(self.user.get('role', '')).upper()}")
+        kullanici_etiketi.setStyleSheet(
+            f"""
+            background:rgba(255,255,255,0.04);
+            color:{C['text_sub']};
+            border:1px solid {C['border_soft']};
+            border-radius:16px;
+            padding:9px 12px;
+            font-size:12px;
+            font-weight:800;
+            """
+        )
+        ust_dizilim.addWidget(kullanici_etiketi)
+
+        self.info_chip = QLabel("Guncelleme akisi hazir")
+        self.info_chip.setStyleSheet(
+            f"""
+            background:rgba(255,255,255,0.04);
+            color:{C['text_dim']};
+            border:1px solid {C['border_soft']};
+            border-radius:16px;
+            padding:9px 12px;
+            font-size:12px;
+            font-weight:700;
+            """
+        )
+        ust_dizilim.addWidget(self.info_chip)
 
         cikis_butonu = QPushButton("Cikis Yap")
         cikis_butonu.setStyleSheet(btn_danger_ss())
         cikis_butonu.setCursor(Qt.PointingHandCursor)
-        cikis_butonu.setMinimumHeight(38)
-        cikis_butonu.setMinimumWidth(132)
+        cikis_butonu.setMinimumHeight(42)
+        cikis_butonu.setMinimumWidth(138)
         cikis_butonu.clicked.connect(self._logout_and_save)
         ust_dizilim.addWidget(cikis_butonu)
 
-        icerik_dizilim.addWidget(ust_cubuk)
-
         self.stack = QStackedWidget()
-        self.stack.setStyleSheet(f"background:{C['bg']};")
+        self.stack.setStyleSheet(
+            f"""
+            QStackedWidget {{
+                background:{C['bg']};
+                border:1px solid {C['border_soft']};
+                border-radius:28px;
+            }}
+            """
+        )
         self.page_names: List[str] = []
         for _, ad, widget in sayfalar:
             self.stack.addWidget(widget)
             self.page_names.append(ad)
-
-        icerik_dizilim.addWidget(self.stack)
-        ana_dizilim.addWidget(icerik, stretch=1)
+        icerik_dizilim.addWidget(self.stack, stretch=1)
 
         self._goto("Panel")
 
     def _add_sidebar_section(self, layout: QVBoxLayout, text: str) -> None:
         etiket = QLabel(text)
-        etiket.setStyleSheet(f"color:{C['text_dim']};font-size:11px;font-weight:900;padding:10px 16px 6px 16px;")
+        etiket.setStyleSheet(f"color:{C['text_dim']};font-size:11px;font-weight:900;padding:12px 4px 6px 4px;")
         layout.addWidget(etiket)
 
     def _goto(self, page_name: str) -> None:
@@ -218,6 +325,8 @@ class MainWindow(QMainWindow):
         index = self.page_names.index(page_name)
         self.stack.setCurrentIndex(index)
         self.lbl_page.setText(page_name)
+        self.lbl_page_hint.setText(f"{page_name} modulu aktif.")
+        self.info_chip.setText(f"V2 arayuz aktif | {page_name} gorunumu optimize edildi")
 
         for i, button in enumerate(self.nav_buttons):
             button.setChecked(i == index)
@@ -256,4 +365,4 @@ class MainWindow(QMainWindow):
         self._update_clock()
 
     def _update_clock(self) -> None:
-        self.lbl_time.setText(datetime.now().strftime("%d.%m.%Y\n%H:%M:%S"))
+        self.lbl_time.setText(datetime.now().strftime("%d.%m.%Y | %H:%M:%S"))
